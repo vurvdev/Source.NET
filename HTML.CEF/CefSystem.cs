@@ -22,6 +22,9 @@ public class CefSystem : IHtmlSystem
 
 		string baseDir = new(pBaseDir);
 		string chromiumDir = AppContext.BaseDirectory;
+		string resourcesDir = Path.Combine(chromiumDir, "Resources");
+		if (!File.Exists(Path.Combine(resourcesDir, "icudtl.dat")))
+			resourcesDir = chromiumDir;
 		string rootCachePath = Path.Combine(baseDir, "cache", "chromium");
 		if (OperatingSystem.IsWindows() && LowIntegrityLabel.GetLocalAppDataLow() is string localAppDataLow)
 			rootCachePath = Path.Combine(localAppDataLow, "Source.NET", "cache", "chromium");
@@ -51,8 +54,8 @@ public class CefSystem : IHtmlSystem
 			LogFile = Path.Combine(baseDir, "chromium.log"),
 			RootCachePath = rootCachePath,
 			UserAgent = "Mozilla/5.0 (Windows NT; Valve Source Client) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36 GMod/13",
-			ResourcesDirPath = chromiumDir,
-			LocalesDirPath = Path.Combine(chromiumDir, "locales"),
+			ResourcesDirPath = resourcesDir,
+			LocalesDirPath = Path.Combine(resourcesDir, "locales"),
 			BrowserSubprocessPath = Path.Combine(chromiumDir, OperatingSystem.IsWindows() ? "HTML.CEF.Process.exe" : "HTML.CEF.Process"),
 		};
 
