@@ -38,16 +38,20 @@ public class FileSystem(IFileSystem fileSystem, IServiceProvider services)
 		if (initInfo.FileSystem == null || initInfo.DirectoryName == null)
 			return SetupFileSystemError(false, FSReturnCode.InvalidParameters, "FileSystem.LoadSearchPaths: Invalid parameters specified.");
 
-		KeyValues? mainFile, fileSystemInfo, searchPaths;
-		FSReturnCode retVal = LoadGameInfoFile(initInfo.DirectoryName, out mainFile, out fileSystemInfo, out searchPaths);
-		if (retVal != FSReturnCode.OK)
-			return retVal;
-
 		string baseDir;
 		if (!GetBaseDir(out baseDir))
 			return SetupFileSystemError(false, FSReturnCode.InvalidParameters, "FileSystem.GetBaseDir: failed.");
 
-		initInfo.ModPath = initInfo.DirectoryName;
+		// The mod directory is relative to the engine's base directory (next to the executable),
+		// never the process' current working directory.
+		string modDir = Path.GetFullPath(Path.Combine(baseDir, initInfo.DirectoryName));
+
+		KeyValues? mainFile, fileSystemInfo, searchPaths;
+		FSReturnCode retVal = LoadGameInfoFile(modDir, out mainFile, out fileSystemInfo, out searchPaths);
+		if (retVal != FSReturnCode.OK)
+			return retVal;
+
+		initInfo.ModPath = modDir;
 
 		const string GAMEINFOPATH_TOKEN = "|gameinfo_path|";
 		const string BASESOURCEPATHS_TOKEN = "|all_source_engine_paths|";
@@ -60,7 +64,7 @@ public class FileSystem(IFileSystem fileSystem, IServiceProvider services)
 			string lBaseDir = baseDir;
 			if (location.Contains(GAMEINFOPATH_TOKEN, StringComparison.OrdinalIgnoreCase)) {
 				location = location[GAMEINFOPATH_TOKEN.Length..];
-				lBaseDir = initInfo.DirectoryName;
+				lBaseDir = modDir;
 			}
 			else if (location.Contains(BASESOURCEPATHS_TOKEN, StringComparison.OrdinalIgnoreCase)) {
 				location = location[BASESOURCEPATHS_TOKEN.Length..];
@@ -92,7 +96,7 @@ public class FileSystem(IFileSystem fileSystem, IServiceProvider services)
 		initInfo.FileSystem.MarkPathIDByRequestOnly("mod_write", true);
 
 #if GMOD_DLL
-		initInfo.FileSystem.GMOD_SetupDefaultPaths(baseDir, initInfo.DirectoryName);
+		initInfo.FileSystem.GMOD_SetupDefaultPaths(baseDir, modDir);
 		initInfo.FileSystem.DoFilesystemRefresh();
 #endif
 
